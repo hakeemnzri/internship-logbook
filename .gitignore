@@ -1,0 +1,12 @@
+# Python virtual environments and bytecode
+.venv/
+__pycache__/
+*.pyc
+
+# Local application data and environment configuration
+*.db
+.env
+
+# Editor and IDE settings
+.vscode/
+.idea/
