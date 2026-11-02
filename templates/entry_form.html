@@ -1,7 +1,6 @@
 {% extends 'base.html' %}{% block title %}{{ 'Edit' if entry else 'New' }} entry · Internship Logbook{% endblock %}{% block content %}
 {% macro activity_row(row) %}
 <li class="activity-item">
-  <button type="button" class="drag-handle" aria-label="Move activity. Drag, or use the up and down arrow keys."><i class="bi bi-grip-vertical"></i></button>
   <input type="time" name="start_time[]" value="{{ row.start }}" class="form-control activity-start" aria-label="Start time">
   <span class="activity-dash" aria-hidden="true">–</span>
   <input type="time" name="end_time[]" value="{{ row.end }}" class="form-control activity-end" aria-label="End time">
@@ -20,7 +19,7 @@
   </section>
 
   <section class="content-card">
-    <div class="section-title"><h2>Activities</h2><span class="total-time" id="totalTime" aria-live="polite"></span></div>
+    <div class="section-title"><div><h2>Activities</h2><p class="section-hint">Sorted by start time when you save.</p></div><span class="total-time" id="totalTime" aria-live="polite"></span></div>
     <ol id="activityList" class="activity-list">{% for row in rows %}{{ activity_row(row) }}{% endfor %}</ol>
     <template id="activityTemplate">{{ activity_row({'start': '', 'end': '', 'text': ''}) }}</template>
     <button type="button" class="btn btn-outline-secondary btn-sm" id="addActivity"><i class="bi bi-plus-lg"></i> Add activity</button>

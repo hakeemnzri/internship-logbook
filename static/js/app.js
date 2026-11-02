@@ -115,42 +115,6 @@ function setUpEntryEditor(form) {
       if (item.nextElementSibling) item.nextElementSibling.querySelector('.activity-start').focus();
       else addRow();
     }
-    // Keyboard reordering on the handle
-    if (event.target.closest('.drag-handle') && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
-      event.preventDefault();
-      const item = event.target.closest('.activity-item');
-      const sibling = event.key === 'ArrowUp' ? item.previousElementSibling : item.nextElementSibling;
-      if (!sibling) return;
-      if (event.key === 'ArrowUp') list.insertBefore(item, sibling); else list.insertBefore(sibling, item);
-      item.querySelector('.drag-handle').focus();
-      unsaved = true;
-    }
-  });
-
-  // Drag only from the handle, so selecting text inside the inputs still works.
-  let dragging = null;
-  list.addEventListener('pointerdown', (event) => {
-    const handle = event.target.closest('.drag-handle');
-    if (handle) handle.closest('.activity-item').draggable = true;
-  });
-  list.addEventListener('dragstart', (event) => {
-    dragging = event.target.closest('.activity-item');
-    dragging?.classList.add('is-dragging');
-  });
-  list.addEventListener('dragover', (event) => {
-    if (!dragging) return;
-    event.preventDefault();
-    const target = event.target.closest('.activity-item');
-    if (!target || target === dragging) return;
-    const after = event.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
-    list.insertBefore(dragging, after ? target.nextElementSibling : target);
-  });
-  list.addEventListener('dragend', () => {
-    if (!dragging) return;
-    dragging.classList.remove('is-dragging');
-    dragging.draggable = false;
-    dragging = null;
-    unsaved = true;
   });
 
   list.addEventListener('input', refresh);

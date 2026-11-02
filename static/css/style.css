@@ -196,6 +196,7 @@ a { color: var(--accent); }
 .summary-line { color: var(--muted); font-size: 14px; }
 .optional { color: var(--muted); font-size: 13px; }
 .total-time { color: var(--muted); font-size: 14px; }
+.section-hint { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 
 /* Home: today's status */
 .today-panel {
@@ -321,29 +322,17 @@ a.week-day:hover { border-style: solid; border-color: var(--accent); color: var(
 
 .activity-item {
   display: grid;
-  grid-template-columns: 28px 120px 12px 120px 1fr 36px;
+  grid-template-columns: 132px 12px 132px 1fr 36px;
   align-items: center;
   gap: 8px;
   padding: 4px 0;
   border-radius: 6px;
 }
 
-.activity-item.is-dragging { opacity: .5; }
-
 .activity-item > * { min-width: 0; }
 .activity-dash { text-align: center; color: var(--muted); }
 .activity-item .is-invalid { border-color: var(--bs-form-invalid-border-color); background-image: none; padding-right: .75rem; }
 
-.drag-handle {
-  height: 36px;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--muted);
-  cursor: grab;
-}
-
-.drag-handle:hover { background: var(--hover); }
 .remove-activity { color: var(--muted); font-size: 15px; }
 
 .rich-toolbar {
@@ -490,14 +479,12 @@ a.calendar-day:focus-visible .day-add { visibility: visible; }
 
   .content-card { padding: 16px 14px; }
 
-  /* Drag and drop does not work with touch, so phones hide the handle and get wider time inputs. */
   .activity-item {
     grid-template-columns: 1fr 10px 1fr 36px;
     gap: 6px;
     padding: 6px 0 12px;
   }
 
-  .activity-item .drag-handle { display: none; }
   .activity-item input[type=time] { padding-left: .5rem; padding-right: .4rem; }
   .activity-item .activity-description { grid-column: 1 / 5; grid-row: 2; }
 

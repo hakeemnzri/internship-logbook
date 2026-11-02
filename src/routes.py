@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from io import BytesIO
 
 import bleach
-from flask import Blueprint, abort, flash, jsonify, make_response, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, make_response, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -66,8 +66,9 @@ def entry_rows(entry):
 
 
 def save_activities(entry):
-    """Replace an entry's activities with validated rows sent by the editor."""
+    """Replace an entry's activities with validated rows sent by the editor, sorted by start time."""
     entry.activities.clear()
+    activities = []
     for order, row in enumerate(submitted_rows()):
         activity_text, start, end = row["text"].strip(), row["start"], row["end"]
         if not any((activity_text, start, end)):
@@ -82,9 +83,11 @@ def save_activities(entry):
             raise ValueError(f"Activity {number} ends before it starts. Check the times.")
         if not activity_text:
             raise ValueError(f"Activity {number} needs a description.")
-        entry.activities.append(Activity(
-            start_time=start_time, end_time=end_time, activity=activity_text, display_order=order
-        ))
+        activities.append(Activity(start_time=start_time, end_time=end_time, activity=activity_text))
+    activities.sort(key=lambda activity: activity.start_time)
+    for order, activity in enumerate(activities):
+        activity.display_order = order
+        entry.activities.append(activity)
 
 
 @main_bp.route("/")
@@ -202,20 +205,6 @@ def delete_entry(entry_id):
     db.session.commit()
     flash("Logbook entry deleted.", "info")
     return redirect(url_for("main.entries"))
-
-
-@main_bp.post("/entries/<int:entry_id>/activities/reorder")
-@login_required
-def reorder_activities(entry_id):
-    entry = owned_entry(entry_id)
-    ids = request.get_json(silent=True, force=True).get("activity_ids", [])
-    activities = {activity.id: activity for activity in entry.activities}
-    if set(ids) != set(activities):
-        return jsonify({"error": "Invalid activity order."}), 400
-    for order, activity_id in enumerate(ids):
-        activities[activity_id].display_order = order
-    db.session.commit()
-    return jsonify({"status": "ok"})
 
 
 @main_bp.route("/calendar")

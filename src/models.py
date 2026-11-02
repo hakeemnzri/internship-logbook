@@ -48,7 +48,7 @@ class LogbookEntry(db.Model):
         "Activity",
         back_populates="logbook_entry",
         cascade="all, delete-orphan",
-        order_by="Activity.display_order",
+        order_by="(Activity.start_time, Activity.display_order)",
     )
 
     @property
