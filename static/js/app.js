@@ -65,15 +65,38 @@ function setUpEntryEditor(form) {
     return hours ? `${hours} h` : `${rest} min`;
   };
 
-  // Show the total time and mark rows where the end time is not after the start time.
+  const overlapWarning = document.getElementById('overlapWarning');
+  const clock = (value) => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+
+  // Show the total time, mark rows where the end time is not after the start time,
+  // and warn about rows that overlap. Overlaps are allowed, so this is only a warning.
   const refresh = () => {
-    let total = 0;
-    list.querySelectorAll('.activity-item').forEach((item) => {
+    const ranges = [];
+    list.querySelectorAll('.activity-item').forEach((item, index) => {
       const start = minutes(item.querySelector('.activity-start').value);
       const end = minutes(item.querySelector('.activity-end').value);
       const wrong = start !== null && end !== null && end <= start;
       item.querySelector('.activity-end').classList.toggle('is-invalid', wrong);
-      if (start !== null && end !== null && !wrong) total += end - start;
+      item.classList.remove('is-overlap');
+      if (start !== null && end !== null && !wrong) ranges.push({item, number: index + 1, start, end});
+    });
+
+    const pairs = [];
+    ranges.forEach((first, index) => ranges.slice(index + 1).forEach((second) => {
+      if (first.start < second.end && second.start < first.end) pairs.push([first, second]);
+    }));
+    pairs.flat().forEach((range) => range.item.classList.add('is-overlap'));
+    overlapWarning.hidden = !pairs.length;
+    overlapWarning.innerHTML = pairs.length
+      ? '<p><i class="bi bi-exclamation-triangle"></i> Some activities overlap. You can still save; overlapping time is counted once.</p><ul>'
+        + pairs.map(([a, b]) => `<li>Activity ${a.number} (<time>${clock(a.start)}–${clock(a.end)}</time>) and activity ${b.number} (<time>${clock(b.start)}–${clock(b.end)}</time>)</li>`).join('')
+        + '</ul>'
+      : '';
+
+    // Count each minute once, even when activities overlap.
+    let total = 0, coveredUntil = 0;
+    ranges.map((r) => [r.start, r.end]).sort((x, y) => x[0] - y[0]).forEach(([start, end]) => {
+      if (end > coveredUntil) { total += end - Math.max(start, coveredUntil); coveredUntil = end; }
     });
     totalTime.textContent = total ? `Total ${formatMinutes(total)}` : '';
   };

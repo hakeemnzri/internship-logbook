@@ -15,6 +15,9 @@
   --accent-hover: #245a42;
   --accent-soft: #e3efe7;
   --on-accent: #ffffff;
+  --warn: #7a4f00;
+  --warn-soft: #fbf0d9;
+  --warn-line: #d9a640;
   --radius: 8px;
 }
 
@@ -29,6 +32,9 @@ html[data-bs-theme=dark] {
   --accent-hover: #95d1b2;
   --accent-soft: #233a2f;
   --on-accent: #10261b;
+  --warn: #e9be6c;
+  --warn-soft: #362b16;
+  --warn-line: #a77b2c;
 }
 
 body {
@@ -330,6 +336,23 @@ a.week-day:hover { border-style: solid; border-color: var(--accent); color: var(
 }
 
 .activity-item > * { min-width: 0; }
+.activity-item.is-overlap input[type=time]:not(.is-invalid) { border-color: var(--warn-line); }
+
+/* Overlapping activities are allowed, so they get a warning colour, not the red error colour. */
+.overlap-note {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 14px;
+}
+
+.overlap-note p { margin: 0; font-weight: 600; }
+.overlap-note ul { margin: 4px 0 0; padding-left: 20px; }
+.overlap-note ul span { opacity: .8; }
+.overlap-note time { white-space: nowrap; }
+.activity-table tr.is-overlap .time-cell { color: var(--warn); }
 .activity-dash { text-align: center; color: var(--muted); }
 .activity-item .is-invalid { border-color: var(--bs-form-invalid-border-color); background-image: none; padding-right: .75rem; }
 

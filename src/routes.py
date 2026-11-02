@@ -156,7 +156,10 @@ def create_entry():
             return render_template("entry_form.html", form=form, entry=None, rows=submitted_rows())
         db.session.add(entry)
         db.session.commit()
-        flash("Logbook entry created.", "success")
+        if entry.overlaps:
+            flash("Logbook entry created, but some activities overlap. Check the times below.", "warning")
+        else:
+            flash("Logbook entry created.", "success")
         return redirect(url_for("main.view_entry", entry_id=entry.id))
     rows = submitted_rows() if request.method == "POST" else entry_rows(None)
     return render_template("entry_form.html", form=form, entry=None, rows=rows)
@@ -191,7 +194,10 @@ def edit_entry(entry_id):
             flash(str(error), "danger")
             return render_template("entry_form.html", form=form, entry=entry, rows=submitted_rows())
         db.session.commit()
-        flash("Logbook entry updated.", "success")
+        if entry.overlaps:
+            flash("Logbook entry updated, but some activities overlap. Check the times below.", "warning")
+        else:
+            flash("Logbook entry updated.", "success")
         return redirect(url_for("main.view_entry", entry_id=entry.id))
     rows = submitted_rows() if request.method == "POST" else entry_rows(entry)
     return render_template("entry_form.html", form=form, entry=entry, rows=rows)

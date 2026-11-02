@@ -14,6 +14,7 @@ The app lets each user create a personal internship logbook. A daily entry can i
 - Rich-text remarks for extra details
 - Home page that shows if today is logged and which days this week have entries, so missed days are easy to spot
 - Total hours for each day, worked out from the activity times
+- A warning when activities overlap. Overlaps are still allowed (for example a meeting during a long task), but the overlapping time is only counted once in the total
 - Searchable entry list (titles, activities, and remarks) and a monthly calendar view
 - Print-friendly entry page and PDF export
 - Responsive layout with light and dark mode (follows the system setting until you pick one)

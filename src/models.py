@@ -53,7 +53,31 @@ class LogbookEntry(db.Model):
 
     @property
     def total_minutes(self):
-        return sum(activity.duration_minutes for activity in self.activities)
+        """Minutes covered by at least one activity, so overlapping time is only counted once."""
+        total, covered_until = 0, 0
+        for start, end in sorted((a.start_minute, a.end_minute) for a in self.activities):
+            if end > covered_until:
+                total += end - max(start, covered_until)
+                covered_until = end
+        return total
+
+    @property
+    def overlaps(self):
+        return find_overlaps(self.activities)
+
+    @property
+    def overlapping_ids(self):
+        return {activity.id for pair in self.overlaps for activity in pair}
+
+
+def find_overlaps(activities):
+    """Return (first, second) pairs of activities whose times overlap."""
+    return [
+        (first, second)
+        for index, first in enumerate(activities)
+        for second in activities[index + 1:]
+        if first.start_minute < second.end_minute and second.start_minute < first.end_minute
+    ]
 
 
 class Activity(db.Model):
@@ -70,7 +94,13 @@ class Activity(db.Model):
     logbook_entry = db.relationship("LogbookEntry", back_populates="activities")
 
     @property
+    def start_minute(self):
+        return self.start_time.hour * 60 + self.start_time.minute
+
+    @property
+    def end_minute(self):
+        return self.end_time.hour * 60 + self.end_time.minute
+
+    @property
     def duration_minutes(self):
-        start = self.start_time.hour * 60 + self.start_time.minute
-        end = self.end_time.hour * 60 + self.end_time.minute
-        return max(end - start, 0)
+        return max(self.end_minute - self.start_minute, 0)

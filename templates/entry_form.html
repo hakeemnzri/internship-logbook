@@ -20,6 +20,7 @@
 
   <section class="content-card">
     <div class="section-title"><div><h2>Activities</h2><p class="section-hint">Sorted by start time when you save.</p></div><span class="total-time" id="totalTime" aria-live="polite"></span></div>
+    <div class="overlap-note" id="overlapWarning" role="status" hidden></div>
     <ol id="activityList" class="activity-list">{% for row in rows %}{{ activity_row(row) }}{% endfor %}</ol>
     <template id="activityTemplate">{{ activity_row({'start': '', 'end': '', 'text': ''}) }}</template>
     <button type="button" class="btn btn-outline-secondary btn-sm" id="addActivity"><i class="bi bi-plus-lg"></i> Add activity</button>

@@ -14,12 +14,18 @@
 
 <section class="content-card">
   <div class="section-title"><h2>Activities</h2>{% if entry.activities %}<span class="total-time">Total {{ entry.total_minutes|hours }}</span>{% endif %}</div>
+  {% if entry.overlaps %}
+  <div class="overlap-note" role="note">
+    <p><i class="bi bi-exclamation-triangle"></i> These activities overlap. Overlapping time is counted once in the total.</p>
+    <ul>{% for first, second in entry.overlaps %}<li><time>{{ first.start_time.strftime('%H:%M') }}–{{ first.end_time.strftime('%H:%M') }}</time> {{ first.activity }} <span>and</span> <time>{{ second.start_time.strftime('%H:%M') }}–{{ second.end_time.strftime('%H:%M') }}</time> {{ second.activity }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
   {% if entry.activities %}
   <table class="activity-table">
     <thead class="visually-hidden"><tr><th>Time</th><th>Activity</th><th>Duration</th></tr></thead>
     <tbody>
     {% for activity in entry.activities %}
-      <tr><td class="time-cell">{{ activity.start_time.strftime('%H:%M') }}–{{ activity.end_time.strftime('%H:%M') }}</td><td>{{ activity.activity }}</td><td class="duration-cell">{{ activity.duration_minutes|hours }}</td></tr>
+      <tr class="{{ 'is-overlap' if activity.id in entry.overlapping_ids }}"><td class="time-cell">{{ activity.start_time.strftime('%H:%M') }}–{{ activity.end_time.strftime('%H:%M') }}</td><td>{{ activity.activity }}</td><td class="duration-cell">{{ activity.duration_minutes|hours }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
