@@ -1,3 +1,20 @@
 {% extends 'base.html' %}{% block title %}Entries · Internship Logbook{% endblock %}{% block content %}
-<div class="page-heading"><div><p class="eyebrow">LOGBOOK</p><h1>All entries</h1></div><a class="btn btn-primary" href="{{ url_for('main.create_entry') }}"><i class="bi bi-plus-lg"></i> New entry</a></div><form class="search-bar" method="get"><i class="bi bi-search"></i><input name="q" value="{{ query }}" placeholder="Search date, title, description, or keywords"><button class="btn btn-dark">Search</button></form>
-<section class="content-card p-0">{% if entries %}<div class="entry-list">{% for entry in entries %}<a href="{{ url_for('main.view_entry', entry_id=entry.id) }}" class="entry-row"><div class="date-square"><b>{{ entry.date.strftime('%d') }}</b><small>{{ entry.date.strftime('%b') }}</small></div><div><strong>{{ entry.title }}</strong><p>{{ entry.activities|length }} activities · {{ entry.date.strftime('%A, %d %B %Y') }}</p></div><i class="bi bi-chevron-right ms-auto"></i></a>{% endfor %}</div>{% else %}<div class="empty-state"><i class="bi bi-search"></i><h3>No entries found</h3><p>{% if query %}Try a different search phrase.{% else %}Create your first daily logbook entry.{% endif %}</p></div>{% endif %}</section>{% endblock %}
+<h1 class="page-title">Entries</h1>
+<form class="search-bar" method="get" role="search">
+  <label for="searchInput" class="visually-hidden">Search entries</label>
+  <i class="bi bi-search" aria-hidden="true"></i>
+  <input id="searchInput" type="search" name="q" value="{{ query }}" placeholder="Search titles, activities and remarks, or a date like {{ today_iso }}">
+  {% if query %}<a class="btn btn-link btn-sm" href="{{ url_for('main.entries') }}">Clear</a>{% endif %}
+  <button class="btn btn-outline-secondary btn-sm">Search</button>
+</form>
+{% if query %}<p class="result-count">{{ entries|length }} {{ 'result' if entries|length == 1 else 'results' }} for "{{ query }}"</p>{% endif %}
+<section class="content-card p-0">
+  {% if entries %}
+  <div class="entry-list">{% for entry in entries %}{% include '_entry_row.html' %}{% endfor %}</div>
+  {% elif query %}
+  <div class="empty-state"><h2>No entries match "{{ query }}"</h2><p>Search looks at titles, activities and remarks. To find a day, type its date as YYYY-MM-DD.</p><a class="btn btn-outline-secondary" href="{{ url_for('main.entries') }}">Show all entries</a></div>
+  {% else %}
+  <div class="empty-state"><h2>No entries yet</h2><p>Each entry covers one day: what you did, when, and any notes.</p><a class="btn btn-primary" href="{{ url_for('main.create_entry') }}">Write today's entry</a></div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,5 +1,53 @@
-{% extends 'base.html' %}{% block title %}Dashboard · Internship Logbook{% endblock %}{% block content %}
-<div class="page-heading"><div><p class="eyebrow">WORKSPACE</p><h1>Good day, {{ current_user.username }}.</h1><p class="text-secondary">Capture the work that shapes your internship.</p></div></div>
-<div class="row g-3 mb-4"><div class="col-md-6 col-xl-4"><div class="stat-card"><i class="bi bi-journal-check"></i><div><span>Total entries</span><strong>{{ total_entries }}</strong></div></div></div><div class="col-md-6 col-xl-4"><div class="stat-card"><i class="bi bi-calendar-week"></i><div><span>This month</span><strong>{{ days_this_month }}</strong></div></div></div><div class="col-xl-4"><div class="stat-card"><i class="bi bi-graph-up-arrow"></i><div><span>Internship progress</span><strong>{{ total_entries }} days logged</strong></div></div></div></div>
-<section class="content-card"><div class="section-title"><h2>Latest entries</h2><a href="{{ url_for('main.entries') }}">View all <i class="bi bi-arrow-right"></i></a></div>{% if latest_entries %}<div class="entry-list">{% for entry in latest_entries %}<a href="{{ url_for('main.view_entry', entry_id=entry.id) }}" class="entry-row"><div class="date-square"><b>{{ entry.date.strftime('%d') }}</b><small>{{ entry.date.strftime('%b') }}</small></div><div><strong>{{ entry.title }}</strong><p>{{ entry.activities|length }} activities · {{ entry.date.strftime('%A') }}</p></div><i class="bi bi-chevron-right ms-auto"></i></a>{% endfor %}</div>{% else %}<div class="empty-state"><i class="bi bi-journal-plus"></i><h3>Your logbook starts here</h3><p>Create a daily entry to build a clear record of your internship.</p><a class="btn btn-primary" href="{{ url_for('main.create_entry') }}">Create first entry</a></div>{% endif %}</section>
+{% extends 'base.html' %}{% block title %}Home · Internship Logbook{% endblock %}{% block content %}
+<h1 class="page-title">{{ today|longdate(False) }}</h1>
+
+<section class="today-panel {{ 'is-logged' if today_entry }}">
+  {% if today_entry %}
+  <div>
+    <p class="today-label"><i class="bi bi-check-circle-fill"></i> Today is logged</p>
+    <a class="today-title" href="{{ url_for('main.view_entry', entry_id=today_entry.id) }}">{{ today_entry.title }}</a>
+    <p class="today-meta">{{ today_entry.activities|length }} {{ 'activity' if today_entry.activities|length == 1 else 'activities' }}{% if today_entry.activities %} · {{ today_entry.total_minutes|hours }}{% endif %}</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('main.edit_entry', entry_id=today_entry.id) }}"><i class="bi bi-pencil"></i> Edit</a>
+  {% else %}
+  <div>
+    <p class="today-label">No entry for today yet</p>
+    <p class="today-meta">Write it while the details are fresh.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('main.create_entry', date=today.isoformat()) }}">Write today's entry</a>
+  {% endif %}
+</section>
+
+<section class="week" aria-labelledby="weekHeading">
+  <div class="section-title"><h2 id="weekHeading">This week</h2><a href="{{ url_for('main.calendar_view') }}">Open calendar</a></div>
+  <ol class="week-strip">
+    {% for day in week_days %}{% set entry = week_entries.get(day) %}
+    <li>
+      {% if entry %}
+      <a class="week-day is-logged {{ 'is-today' if day == today }}" href="{{ url_for('main.view_entry', entry_id=entry.id) }}" title="{{ entry.title }}">
+        <span class="week-name">{{ day.strftime('%a') }}</span><span class="week-num">{{ day.day }}</span><span class="week-state"><i class="bi bi-check-lg"></i><span class="visually-hidden">logged</span></span>
+      </a>
+      {% elif day <= today %}
+      <a class="week-day {{ 'is-today' if day == today }}" href="{{ url_for('main.create_entry', date=day.isoformat()) }}" title="Write an entry for {{ day.strftime('%A') }}">
+        <span class="week-name">{{ day.strftime('%a') }}</span><span class="week-num">{{ day.day }}</span><span class="week-state"><i class="bi bi-plus"></i><span class="visually-hidden">no entry, write one</span></span>
+      </a>
+      {% else %}
+      <span class="week-day is-future">
+        <span class="week-name">{{ day.strftime('%a') }}</span><span class="week-num">{{ day.day }}</span><span class="week-state"></span>
+      </span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+<section class="content-card p-0">
+  <div class="section-title card-pad"><h2>Recent entries</h2>{% if latest_entries %}<a href="{{ url_for('main.entries') }}">All entries</a>{% endif %}</div>
+  {% if latest_entries %}
+  <div class="entry-list">{% for entry in latest_entries %}{% include '_entry_row.html' %}{% endfor %}</div>
+  {% else %}
+  <p class="empty-note">Entries you write will show up here.</p>
+  {% endif %}
+</section>
+{% if total_entries %}<p class="summary-line">{{ total_entries }} {{ 'entry' if total_entries == 1 else 'entries' }} in total, {{ days_this_month }} this month.</p>{% endif %}
 {% endblock %}

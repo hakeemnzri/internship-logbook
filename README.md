@@ -10,12 +10,13 @@ The app lets each user create a personal internship logbook. A daily entry can i
 
 - User registration and login
 - One logbook entry per day for each user
-- Add, edit, delete, and reorder daily activities
+- Add, edit, delete, and reorder daily activities (drag the handle, or focus it and use the arrow keys; reordering is desktop only for now)
 - Rich-text remarks for extra details
-- Dashboard with entry and monthly activity summaries
-- Searchable entry list and monthly calendar view
+- Home page that shows if today is logged and which days this week have entries, so missed days are easy to spot
+- Total hours for each day, worked out from the activity times
+- Searchable entry list (titles, activities, and remarks) and a monthly calendar view
 - Print-friendly entry page and PDF export
-- Responsive layout with light and dark mode
+- Responsive layout with light and dark mode (follows the system setting until you pick one)
 
 ## Screenshots
 

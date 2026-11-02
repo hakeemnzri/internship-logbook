@@ -1,6 +1,48 @@
 {% extends 'base.html' %}{% block title %}{{ 'Edit' if entry else 'New' }} entry · Internship Logbook{% endblock %}{% block content %}
-<div class="page-heading"><div><p class="eyebrow">DAILY LOGBOOK</p><h1>{{ 'Edit entry' if entry else 'New entry' }}</h1></div><a class="btn btn-outline-secondary" href="{{ url_for('main.view_entry', entry_id=entry.id) if entry else url_for('main.entries') }}">Cancel</a></div>
-<form method="post" id="entryForm" class="editor-form">{{ form.hidden_tag() }}<section class="content-card"><div class="row g-3"><div class="col-md-4"><label class="form-label">Date</label>{{ form.date(class='form-control') }}</div><div class="col-md-8"><label class="form-label">Title</label>{{ form.title(class='form-control', placeholder='What did you work on?') }}</div></div>{% for field in [form.date, form.title] %}{% for error in field.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}{% endfor %}</section>
-<section class="content-card"><div class="section-title"><div><h2>Activities</h2><p>Order your day exactly as it happened.</p></div><button type="button" class="btn btn-outline-primary btn-sm" id="addActivity"><i class="bi bi-plus-lg"></i> Add activity</button></div><div id="activityList">{% for activity in entry.activities if entry %}<div class="activity-item"><button type="button" class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></button><input type="time" name="start_time[]" value="{{ activity.start_time.strftime('%H:%M') }}" class="form-control"><span>to</span><input type="time" name="end_time[]" value="{{ activity.end_time.strftime('%H:%M') }}" class="form-control"><input name="activity[]" value="{{ activity.activity }}" class="form-control activity-description" placeholder="Activity description"><button type="button" class="btn btn-light remove-activity" title="Remove"><i class="bi bi-trash3"></i></button></div>{% endfor %}</div><template id="activityTemplate"><div class="activity-item"><button type="button" class="drag-handle" title="Drag to reorder"><i class="bi bi-grip-vertical"></i></button><input type="time" name="start_time[]" class="form-control"><span>to</span><input type="time" name="end_time[]" class="form-control"><input name="activity[]" class="form-control activity-description" placeholder="Activity description"><button type="button" class="btn btn-light remove-activity" title="Remove"><i class="bi bi-trash3"></i></button></div></template></section>
-<section class="content-card"><div class="section-title"><div><h2>Description / Remarks</h2><p>Add context, outcomes, and observations.</p></div></div><div class="rich-toolbar"><button type="button" data-command="bold"><b>B</b></button><button type="button" data-command="italic"><i>I</i></button><button type="button" data-command="insertUnorderedList"><i class="bi bi-list-ul"></i></button><button type="button" data-command="insertOrderedList"><i class="bi bi-list-ol"></i></button><button type="button" data-command="formatBlock" data-value="h3">H</button><button type="button" id="linkButton"><i class="bi bi-link-45deg"></i></button></div><div id="richEditor" class="rich-editor" contenteditable="true" data-placeholder="Write your remarks here…">{{ (form.description.data or '')|safe }}</div>{{ form.description() }}</section><div class="d-flex justify-content-end gap-2 pb-4"><a class="btn btn-outline-secondary" href="{{ url_for('main.entries') }}">Cancel</a>{{ form.submit(class='btn btn-primary px-4') }}</div></form>
+{% macro activity_row(row) %}
+<li class="activity-item">
+  <button type="button" class="drag-handle" aria-label="Move activity. Drag, or use the up and down arrow keys."><i class="bi bi-grip-vertical"></i></button>
+  <input type="time" name="start_time[]" value="{{ row.start }}" class="form-control activity-start" aria-label="Start time">
+  <span class="activity-dash" aria-hidden="true">–</span>
+  <input type="time" name="end_time[]" value="{{ row.end }}" class="form-control activity-end" aria-label="End time">
+  <input name="activity[]" value="{{ row.text }}" class="form-control activity-description" aria-label="What you did" placeholder="What did you do?" maxlength="500">
+  <button type="button" class="icon-button remove-activity" aria-label="Remove activity"><i class="bi bi-x-lg"></i></button>
+</li>
+{% endmacro %}
+<h1 class="page-title">{{ 'Edit entry' if entry else 'New entry' }}</h1>
+
+<form method="post" id="entryForm" class="editor-form" novalidate>{{ form.hidden_tag() }}
+  <section class="content-card">
+    <div class="row g-3">
+      <div class="col-sm-4 col-lg-3">{{ form.date.label(class='form-label') }}{{ form.date(class='form-control' + (' is-invalid' if form.date.errors else '')) }}{% for error in form.date.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}</div>
+      <div class="col-sm-8 col-lg-9">{{ form.title.label(class='form-label') }}{{ form.title(class='form-control' + (' is-invalid' if form.title.errors else ''), placeholder='e.g. Fixed the login redirect bug', maxlength=150) }}{% for error in form.title.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}</div>
+    </div>
+  </section>
+
+  <section class="content-card">
+    <div class="section-title"><h2>Activities</h2><span class="total-time" id="totalTime" aria-live="polite"></span></div>
+    <ol id="activityList" class="activity-list">{% for row in rows %}{{ activity_row(row) }}{% endfor %}</ol>
+    <template id="activityTemplate">{{ activity_row({'start': '', 'end': '', 'text': ''}) }}</template>
+    <button type="button" class="btn btn-outline-secondary btn-sm" id="addActivity"><i class="bi bi-plus-lg"></i> Add activity</button>
+  </section>
+
+  <section class="content-card">
+    <div class="section-title"><h2 id="remarksLabel">Remarks</h2><span class="optional">Optional</span></div>
+    <div class="rich-toolbar" role="toolbar" aria-label="Formatting">
+      <button type="button" data-command="bold" aria-label="Bold" title="Bold"><i class="bi bi-type-bold"></i></button>
+      <button type="button" data-command="italic" aria-label="Italic" title="Italic"><i class="bi bi-type-italic"></i></button>
+      <button type="button" data-command="formatBlock" data-value="h3" aria-label="Heading" title="Heading"><i class="bi bi-type-h3"></i></button>
+      <button type="button" data-command="insertUnorderedList" aria-label="Bulleted list" title="Bulleted list"><i class="bi bi-list-ul"></i></button>
+      <button type="button" data-command="insertOrderedList" aria-label="Numbered list" title="Numbered list"><i class="bi bi-list-ol"></i></button>
+      <button type="button" id="linkButton" aria-label="Add link" title="Add link"><i class="bi bi-link-45deg"></i></button>
+    </div>
+    <div id="richEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="remarksLabel" data-placeholder="Problems you hit, what you learned, feedback from your supervisor…">{{ (form.description.data or '')|safe }}</div>
+    {{ form.description() }}
+  </section>
+
+  <div class="form-actions">
+    <a class="btn btn-link" href="{{ url_for('main.view_entry', entry_id=entry.id) if entry else url_for('main.dashboard') }}">Cancel</a>
+    {{ form.submit(class='btn btn-primary px-4') }}
+  </div>
+</form>
 {% endblock %}

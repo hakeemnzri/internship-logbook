@@ -51,6 +51,10 @@ class LogbookEntry(db.Model):
         order_by="Activity.display_order",
     )
 
+    @property
+    def total_minutes(self):
+        return sum(activity.duration_minutes for activity in self.activities)
+
 
 class Activity(db.Model):
     __tablename__ = "activities"
@@ -64,3 +68,9 @@ class Activity(db.Model):
     activity = db.Column(db.String(500), nullable=False)
     display_order = db.Column(db.Integer, nullable=False, default=0)
     logbook_entry = db.relationship("LogbookEntry", back_populates="activities")
+
+    @property
+    def duration_minutes(self):
+        start = self.start_time.hour * 60 + self.start_time.minute
+        end = self.end_time.hour * 60 + self.end_time.minute
+        return max(end - start, 0)

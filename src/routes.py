@@ -1,5 +1,5 @@
 import calendar
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from io import BytesIO
 
 import bleach
@@ -21,6 +21,21 @@ ALLOWED_TAGS = ["p", "br", "strong", "em", "b", "i", "ul", "ol", "li", "h2", "h3
 ALLOWED_ATTRIBUTES = {"a": ["href", "title", "target", "rel"]}
 
 
+@main_bp.app_template_filter("hours")
+def format_hours(minutes):
+    hours, rest = divmod(minutes, 60)
+    if hours and rest:
+        return f"{hours} h {rest} min"
+    return f"{hours} h" if hours else f"{rest} min"
+
+
+@main_bp.app_template_filter("longdate")
+def format_long_date(value, with_year=True):
+    """Format a date as 'Monday, 2 November 2026' without a leading zero on the day."""
+    text = f"{value:%A}, {value.day} {value:%B}"
+    return f"{text} {value.year}" if with_year else text
+
+
 def owned_entry(entry_id):
     return LogbookEntry.query.filter_by(id=entry_id, user_id=current_user.id).first_or_404()
 
@@ -29,39 +44,68 @@ def clean_description(value):
     return bleach.clean(value or "", tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True)
 
 
+def submitted_rows():
+    """Return the activity rows sent by the editor, so they can be shown again after an error."""
+    return [
+        {"start": start, "end": end, "text": text}
+        for text, start, end in zip(
+            request.form.getlist("activity[]"),
+            request.form.getlist("start_time[]"),
+            request.form.getlist("end_time[]"),
+        )
+    ]
+
+
+def entry_rows(entry):
+    if entry is None:
+        return [{"start": "", "end": "", "text": ""}]
+    return [
+        {"start": a.start_time.strftime("%H:%M"), "end": a.end_time.strftime("%H:%M"), "text": a.activity}
+        for a in entry.activities
+    ]
+
+
 def save_activities(entry):
     """Replace an entry's activities with validated rows sent by the editor."""
     entry.activities.clear()
-    rows = request.form.getlist("activity[]")
-    starts = request.form.getlist("start_time[]")
-    ends = request.form.getlist("end_time[]")
-    for order, (activity_text, start, end) in enumerate(zip(rows, starts, ends)):
-        if not any((activity_text.strip(), start, end)):
+    for order, row in enumerate(submitted_rows()):
+        activity_text, start, end = row["text"].strip(), row["start"], row["end"]
+        if not any((activity_text, start, end)):
             continue
+        number = order + 1
         try:
             start_time = datetime.strptime(start, "%H:%M").time()
             end_time = datetime.strptime(end, "%H:%M").time()
         except ValueError as error:
-            raise ValueError("Each activity needs a valid start and end time.") from error
-        if not activity_text.strip():
-            raise ValueError("Each activity needs a description.")
+            raise ValueError(f"Activity {number} needs a start and end time.") from error
+        if end_time <= start_time:
+            raise ValueError(f"Activity {number} ends before it starts. Check the times.")
+        if not activity_text:
+            raise ValueError(f"Activity {number} needs a description.")
         entry.activities.append(Activity(
-            start_time=start_time, end_time=end_time, activity=activity_text.strip(), display_order=order
+            start_time=start_time, end_time=end_time, activity=activity_text, display_order=order
         ))
 
 
 @main_bp.route("/")
 @login_required
 def dashboard():
+    today = date.today()
     entries = current_user.logbook_entries.order_by(LogbookEntry.date.desc())
-    latest_entries = entries.limit(5).all()
-    total_entries = entries.count()
+    week_start = today - timedelta(days=today.weekday())
+    week_days = [week_start + timedelta(days=offset) for offset in range(7)]
+    week_entries = {entry.date: entry for entry in entries.filter(
+        LogbookEntry.date >= week_start, LogbookEntry.date <= week_days[-1]
+    ).all()}
     days_this_month = entries.filter(
-        db.extract("year", LogbookEntry.date) == date.today().year,
-        db.extract("month", LogbookEntry.date) == date.today().month,
+        db.extract("year", LogbookEntry.date) == today.year,
+        db.extract("month", LogbookEntry.date) == today.month,
     ).count()
-    return render_template("dashboard.html", total_entries=total_entries, latest_entries=latest_entries,
-                           days_this_month=days_this_month)
+    return render_template(
+        "dashboard.html", today=today, today_entry=week_entries.get(today), week_days=week_days,
+        week_entries=week_entries, latest_entries=entries.limit(5).all(), total_entries=entries.count(),
+        days_this_month=days_this_month,
+    )
 
 
 @main_bp.route("/entries")
@@ -70,13 +114,18 @@ def entries():
     query = request.args.get("q", "").strip()
     entry_query = current_user.logbook_entries
     if query:
-        filters = [LogbookEntry.title.ilike(f"%{query}%"), LogbookEntry.description.ilike(f"%{query}%")]
+        filters = [
+            LogbookEntry.title.ilike(f"%{query}%"),
+            LogbookEntry.description.ilike(f"%{query}%"),
+            LogbookEntry.activities.any(Activity.activity.ilike(f"%{query}%")),
+        ]
         try:
             filters.append(LogbookEntry.date == datetime.strptime(query, "%Y-%m-%d").date())
         except ValueError:
             pass
         entry_query = entry_query.filter(or_(*filters))
-    return render_template("entries.html", entries=entry_query.order_by(LogbookEntry.date.desc()).all(), query=query)
+    return render_template("entries.html", entries=entry_query.order_by(LogbookEntry.date.desc()).all(), query=query,
+                           today_iso=date.today().isoformat())
 
 
 @main_bp.route("/entries/new", methods=["GET", "POST"])
@@ -84,9 +133,9 @@ def entries():
 def create_entry():
     selected_date = request.args.get("date")
     form = LogbookEntryForm()
-    if request.method == "GET" and selected_date:
+    if request.method == "GET":
         try:
-            form.date.data = datetime.strptime(selected_date, "%Y-%m-%d").date()
+            form.date.data = datetime.strptime(selected_date, "%Y-%m-%d").date() if selected_date else date.today()
         except ValueError:
             abort(404)
     if form.validate_on_submit():
@@ -99,13 +148,15 @@ def create_entry():
         try:
             save_activities(entry)
         except ValueError as error:
+            db.session.rollback()
             flash(str(error), "danger")
-            return render_template("entry_form.html", form=form, entry=None)
+            return render_template("entry_form.html", form=form, entry=None, rows=submitted_rows())
         db.session.add(entry)
         db.session.commit()
         flash("Logbook entry created.", "success")
         return redirect(url_for("main.view_entry", entry_id=entry.id))
-    return render_template("entry_form.html", form=form, entry=None)
+    rows = submitted_rows() if request.method == "POST" else entry_rows(None)
+    return render_template("entry_form.html", form=form, entry=None, rows=rows)
 
 
 @main_bp.route("/entries/<int:entry_id>")
@@ -133,12 +184,14 @@ def edit_entry(entry_id):
         try:
             save_activities(entry)
         except ValueError as error:
+            db.session.rollback()
             flash(str(error), "danger")
-            return render_template("entry_form.html", form=form, entry=entry)
+            return render_template("entry_form.html", form=form, entry=entry, rows=submitted_rows())
         db.session.commit()
         flash("Logbook entry updated.", "success")
         return redirect(url_for("main.view_entry", entry_id=entry.id))
-    return render_template("entry_form.html", form=form, entry=entry)
+    rows = submitted_rows() if request.method == "POST" else entry_rows(entry)
+    return render_template("entry_form.html", form=form, entry=entry, rows=rows)
 
 
 @main_bp.post("/entries/<int:entry_id>/delete")

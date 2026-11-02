@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Create account · Internship Logbook{% endblock %}
-{% block content %}
+{% block auth_content %}
+<p class="auth-brand"><i class="bi bi-journal-text"></i> Internship Logbook</p>
 <section class="auth-card">
-  <div class="auth-brand"><span class="auth-logo"><i class="bi bi-journal-richtext"></i></span><div><h1>Internship Logbook</h1><p>Record and manage your internship activities.</p></div></div>
-  <div class="auth-divider"></div><div class="auth-heading"><h2>Create your account</h2><p>Set up your personal logbook in a moment.</p></div>
-  <form method="post">{{ form.hidden_tag() }}
-    <div class="auth-field">{{ form.username.label(class="form-label") }}{{ form.username(class="form-control form-control-lg", placeholder="Choose a username", autocomplete="username", autofocus=true) }}{% for error in form.username.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}</div>
-    <div class="auth-field">{{ form.password.label(class="form-label") }}<div class="password-control">{{ form.password(class="form-control form-control-lg", placeholder="Create a password", autocomplete="new-password") }}<button type="button" class="password-toggle" aria-label="Show password"><i class="bi bi-eye"></i></button></div>{% for error in form.password.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}</div>
-    <div class="auth-field">{{ form.confirm_password.label(class="form-label") }}<div class="password-control">{{ form.confirm_password(class="form-control form-control-lg", placeholder="Confirm your password", autocomplete="new-password") }}<button type="button" class="password-toggle" aria-label="Show password"><i class="bi bi-eye"></i></button></div>{% for error in form.confirm_password.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}</div>
-    {{ form.submit(class="btn btn-primary auth-submit") }}
-  </form><p class="auth-switch">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+  <h1>Create an account</h1>
+  <form method="post" novalidate>{{ form.hidden_tag() }}
+    <div class="auth-field">{{ form.username.label(class="form-label") }}{{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), autocomplete="username", autofocus=true, **{"aria-describedby": "usernameHelp"}) }}{% for error in form.username.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}{% if not form.username.errors %}<div class="form-text" id="usernameHelp">4 to 25 characters.</div>{% endif %}</div>
+    <div class="auth-field">{{ form.password.label(class="form-label") }}<div class="password-control">{{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="new-password", **{"aria-describedby": "passwordHelp"}) }}<button type="button" class="password-toggle" aria-label="Show password"><i class="bi bi-eye"></i></button></div>{% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}{% if not form.password.errors %}<div class="form-text" id="passwordHelp">At least 8 characters.</div>{% endif %}</div>
+    <div class="auth-field">{{ form.confirm_password.label(class="form-label") }}<div class="password-control">{{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), autocomplete="new-password") }}<button type="button" class="password-toggle" aria-label="Show password"><i class="bi bi-eye"></i></button></div>{% for error in form.confirm_password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+    {{ form.submit(class="btn btn-primary w-100") }}
+  </form>
 </section>
+<p class="auth-switch">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
 {% endblock %}

@@ -55,7 +55,7 @@ def register():
         db.session.commit()
 
         flash(
-            "Your account has been created successfully! Please log in.",
+            "Account created. You can sign in now.",
             "success",
         )
 
@@ -82,11 +82,6 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user)
 
-            flash(
-                f"Welcome back, {user.username}!",
-                "success",
-            )
-
             # Redirect to the page the user originally wanted
             next_page = request.args.get("next")
 
@@ -111,7 +106,7 @@ def logout():
     logout_user()
 
     flash(
-        "You have been logged out successfully.",
+        "You have signed out.",
         "info",
     )
 

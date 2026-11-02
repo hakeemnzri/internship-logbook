@@ -1,0 +1,5 @@
+<a href="{{ url_for('main.view_entry', entry_id=entry.id) }}" class="entry-row">
+  <time class="entry-date" datetime="{{ entry.date.isoformat() }}"><b>{{ entry.date.strftime('%d') }}</b><small>{{ entry.date.strftime('%b') }}</small></time>
+  <span class="entry-text"><strong>{{ entry.title }}</strong><small>{{ entry.date.strftime('%A') }} · {{ entry.activities|length }} {{ 'activity' if entry.activities|length == 1 else 'activities' }}{% if entry.activities %} · {{ entry.total_minutes|hours }}{% endif %}</small></span>
+  <i class="bi bi-chevron-right" aria-hidden="true"></i>
+</a>

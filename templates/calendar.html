@@ -1,2 +1,26 @@
 {% extends 'base.html' %}{% block title %}Calendar · Internship Logbook{% endblock %}{% block content %}
-<div class="page-heading"><div><p class="eyebrow">PLANNING</p><h1>Calendar</h1></div><a class="btn btn-primary" href="{{ url_for('main.create_entry') }}">New entry</a></div><section class="content-card calendar-card"><div class="calendar-nav"><a href="{{ url_for('main.calendar_view', year=previous_month.year, month=previous_month.month) }}"><i class="bi bi-chevron-left"></i></a><h2>{{ month_label }} {{ year }}</h2><a href="{{ url_for('main.calendar_view', year=next_month.year, month=next_month.month) }}"><i class="bi bi-chevron-right"></i></a></div><div class="calendar-grid calendar-weekdays">{% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<div>{{ day }}</div>{% endfor %}</div><div class="calendar-grid">{% for week in weeks %}{% for day in week %}{% set entry = entries_by_date.get(day) %}<a class="calendar-day {{ 'muted' if day.month != month }} {{ 'today' if day == today }}" href="{{ url_for('main.view_entry', entry_id=entry.id) if entry else url_for('main.create_entry', date=day.isoformat()) }}"><span>{{ day.day }}</span>{% if entry %}<small>{{ entry.title }}</small><i class="bi bi-journal-check"></i>{% endif %}</a>{% endfor %}{% endfor %}</div></section>{% endblock %}
+<div class="calendar-header">
+  <h1 class="page-title mb-0">{{ month_label }} {{ year }}</h1>
+  <div class="calendar-nav">
+    <a class="icon-button" href="{{ url_for('main.calendar_view', year=previous_month.year, month=previous_month.month) }}" aria-label="Previous month"><i class="bi bi-chevron-left"></i></a>
+    {% if not (year == today.year and month == today.month) %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.calendar_view') }}">This month</a>{% endif %}
+    <a class="icon-button" href="{{ url_for('main.calendar_view', year=next_month.year, month=next_month.month) }}" aria-label="Next month"><i class="bi bi-chevron-right"></i></a>
+  </div>
+</div>
+<p class="calendar-count">{{ entries_by_date|length }} {{ 'day' if entries_by_date|length == 1 else 'days' }} logged this month. Select an empty day to write an entry for it.</p>
+<section class="content-card calendar-card">
+  <div class="calendar-grid calendar-weekdays" aria-hidden="true">{% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<div>{{ day }}</div>{% endfor %}</div>
+  <div class="calendar-grid">
+    {% for week in weeks %}{% for day in week %}{% set entry = entries_by_date.get(day) %}
+    {% set classes = ['calendar-day'] + (['is-outside'] if day.month != month else []) + (['is-today'] if day == today else []) + (['is-logged'] if entry else []) + (['is-future'] if day > today else []) %}
+    {% if entry %}
+    <a class="{{ classes|join(' ') }}" href="{{ url_for('main.view_entry', entry_id=entry.id) }}" aria-label="{{ day.strftime('%d %B') }}: {{ entry.title }}"><span class="day-num">{{ day.day }}</span><span class="day-title">{{ entry.title }}</span></a>
+    {% elif day > today %}
+    <span class="{{ classes|join(' ') }}"><span class="day-num">{{ day.day }}</span></span>
+    {% else %}
+    <a class="{{ classes|join(' ') }}" href="{{ url_for('main.create_entry', date=day.isoformat()) }}" aria-label="{{ day.strftime('%d %B') }}: no entry, write one"><span class="day-num">{{ day.day }}</span><span class="day-add"><i class="bi bi-plus"></i></span></a>
+    {% endif %}
+    {% endfor %}{% endfor %}
+  </div>
+</section>
+{% endblock %}
